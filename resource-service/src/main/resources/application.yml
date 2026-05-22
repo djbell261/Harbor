@@ -4,14 +4,17 @@ server:
 spring:
   application:
     name: resource-service
+  profiles:
+    default: local
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     hikari:
       connection-timeout: 5000
       validation-timeout: 2000
       maximum-pool-size: 10
+      connection-init-sql: SET harbor.seed_data.enabled = '${HARBOR_SEED_DATA_ENABLED:false}'
   jpa:
     hibernate:
       ddl-auto: validate
@@ -45,14 +48,26 @@ management:
       enabled: true
 
 springdoc:
+  api-docs:
+    enabled: ${HARBOR_OPENAPI_ENABLED:true}
   swagger-ui:
+    enabled: ${HARBOR_OPENAPI_ENABLED:true}
     path: /swagger-ui.html
+
+info:
+  app:
+    name: ${spring.application.name}
+    version: ${HARBOR_APP_VERSION:0.0.1-SNAPSHOT}
+    build: ${HARBOR_BUILD_ID:local}
+    commit: ${HARBOR_GIT_COMMIT:unknown}
 
 logging:
   pattern:
     console: "time=%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%5p service=${spring.application.name} correlationId=%X{correlationId:-none} thread=%t logger=%logger{36} message=\"%m\"%n"
 
 harbor:
+  cors:
+    allowed-origin-patterns: ${HARBOR_CORS_ALLOWED_ORIGIN_PATTERNS:}
   verification:
     stale-resource-days: ${HARBOR_STALE_RESOURCE_DAYS:30}
     rate-limit:

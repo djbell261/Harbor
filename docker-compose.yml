@@ -1,11 +1,15 @@
-  services:
+# Harbor local/dev Docker Compose stack.
+# This file is intentionally not a production deployment manifest.
+# Production should provide managed PostgreSQL, externalized secrets,
+# explicit CORS origins, and SPRING_PROFILES_ACTIVE=prod.
+services:
     postgres:
       image: postgres:16
       container_name: harbor-postgres
       environment:
-        POSTGRES_DB: harbor
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: Noah2511
+        POSTGRES_DB: ${POSTGRES_DB:-harbor}
+        POSTGRES_USER: ${POSTGRES_USER:-postgres}
+        POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-harbor-local-password}
       ports:
         - "5434:5432"
       volumes:
@@ -15,8 +19,12 @@
       build:
         context: ./resource-service
       container_name: harbor-resource-service
-      env_file:
-        - .env
+      environment:
+        SPRING_PROFILES_ACTIVE: docker
+        SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/harbor}
+        SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-postgres}
+        SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-harbor-local-password}
+        HARBOR_SEED_DATA_ENABLED: ${HARBOR_SEED_DATA_ENABLED:-true}
       ports:
         - "8081:8081"
       depends_on:
@@ -51,7 +59,7 @@
       depends_on:
         - prometheus
 
-  volumes:
+volumes:
     harbor_postgres_data:
     harbor_prometheus_data:
     harbor_grafana_data:

@@ -102,6 +102,7 @@ SELECT
   email,
   trusted_status
 FROM seed_organizations
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true'
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
@@ -112,23 +113,29 @@ ON CONFLICT (id) DO UPDATE SET
   updated_at = now();
 
 UPDATE resources SET organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1'
-WHERE id = '11111111-1111-4111-8111-111111111111';
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true'
+  AND id = '11111111-1111-4111-8111-111111111111';
 
 UPDATE resources SET organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2'
-WHERE id = '22222222-2222-4222-8222-222222222222';
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true'
+  AND id = '22222222-2222-4222-8222-222222222222';
 
 UPDATE resources SET organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3'
-WHERE id = '33333333-3333-4333-8333-333333333333';
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true'
+  AND id = '33333333-3333-4333-8333-333333333333';
 
 UPDATE resources SET organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4'
-WHERE id IN (
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true'
+  AND id IN (
   '44444444-4444-4444-8444-444444444444',
   '66666666-6666-4666-8666-666666666666',
   '77777777-7777-4777-8777-777777777777'
 );
 
 UPDATE resources SET organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa5'
-WHERE id = '55555555-5555-4555-8555-555555555555';
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true'
+  AND id = '55555555-5555-4555-8555-555555555555';
 
 UPDATE resources SET organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa6'
-WHERE id = '88888888-8888-4888-8888-888888888888';
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true'
+  AND id = '88888888-8888-4888-8888-888888888888';

@@ -1,0 +1,25 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      maximum-pool-size: ${SPRING_DATASOURCE_MAX_POOL_SIZE:10}
+      connection-init-sql: SET harbor.seed_data.enabled = '${HARBOR_SEED_DATA_ENABLED:false}'
+  jpa:
+    properties:
+      hibernate:
+        format_sql: false
+
+springdoc:
+  api-docs:
+    enabled: ${HARBOR_OPENAPI_ENABLED:false}
+  swagger-ui:
+    enabled: ${HARBOR_OPENAPI_ENABLED:false}
+
+harbor:
+  cors:
+    allowed-origin-patterns: ${HARBOR_CORS_ALLOWED_ORIGIN_PATTERNS}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Harbor verification reporting screenshot placeholder</title>
+  <desc id="desc">Placeholder image for the Harbor anonymous verification reporting form.</desc>
+  <rect width="1200" height="720" fill="#f7faf8"/>
+  <rect x="80" y="80" width="1040" height="560" rx="18" fill="#ffffff" stroke="#cbd8d0" stroke-width="2"/>
+  <text x="120" y="160" font-family="Arial, sans-serif" font-size="48" font-weight="700" fill="#18352b">Verification Reporting</text>
+  <text x="120" y="218" font-family="Arial, sans-serif" font-size="26" fill="#52645d">Screenshot placeholder</text>
+  <rect x="120" y="290" width="520" height="58" rx="10" fill="#e8f0eb"/>
+  <rect x="120" y="380" width="760" height="150" rx="12" fill="#f0f4f2"/>
+  <rect x="120" y="560" width="220" height="54" rx="12" fill="#255f4a"/>
+</svg>

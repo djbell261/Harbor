@@ -1,0 +1,27 @@
+  services:
+    postgres:
+      image: postgres:16
+      container_name: harbor-postgres
+      environment:
+        POSTGRES_DB: harbor
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: Noah2511
+      ports:
+        - "5434:5432"
+      volumes:
+        - harbor_postgres_data:/var/lib/postgresql/data
+
+    resource-service:
+      build:
+        context: ./resource-service
+      container_name: harbor-resource-service
+      env_file:
+        - .env
+      ports:
+        - "8081:8081"
+      depends_on:
+        - postgres
+
+  volumes:
+    harbor_postgres_data:
+

@@ -7,10 +7,13 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
+
 public class VerificationReportRateLimiter {
 
 	private final Map<String, Deque<Instant>> submissionsByIp = new ConcurrentHashMap<>();
@@ -18,6 +21,7 @@ public class VerificationReportRateLimiter {
 	private final Duration window;
 	private final Clock clock;
 
+	@Autowired
 	public VerificationReportRateLimiter(
 		@Value("${harbor.verification.rate-limit.max-submissions:5}") int maxSubmissions,
 		@Value("${harbor.verification.rate-limit.window-minutes:10}") int windowMinutes

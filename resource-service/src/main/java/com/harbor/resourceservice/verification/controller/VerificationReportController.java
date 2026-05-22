@@ -3,6 +3,7 @@ package com.harbor.resourceservice.verification.controller;
 import com.harbor.resourceservice.common.response.ApiErrorResponse;
 import com.harbor.resourceservice.verification.dto.CreateVerificationReportRequest;
 import com.harbor.resourceservice.verification.dto.VerificationReportResponse;
+import com.harbor.resourceservice.observability.HarborMetrics;
 import com.harbor.resourceservice.verification.service.VerificationReportRateLimiter;
 import com.harbor.resourceservice.verification.service.VerificationReportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,13 +33,16 @@ public class VerificationReportController {
 
 	private final VerificationReportService reportService;
 	private final VerificationReportRateLimiter rateLimiter;
+	private final HarborMetrics harborMetrics;
 
 	public VerificationReportController(
 		VerificationReportService reportService,
-		VerificationReportRateLimiter rateLimiter
+		VerificationReportRateLimiter rateLimiter,
+		HarborMetrics harborMetrics
 	) {
 		this.reportService = reportService;
 		this.rateLimiter = rateLimiter;
+		this.harborMetrics = harborMetrics;
 	}
 
 	@PostMapping
@@ -127,6 +131,7 @@ public class VerificationReportController {
 		HttpServletRequest servletRequest
 	) {
 		if (!rateLimiter.tryAcquire(clientIp(servletRequest))) {
+			harborMetrics.recordRateLimitRejection();
 			throw new org.springframework.web.server.ResponseStatusException(
 				HttpStatus.TOO_MANY_REQUESTS,
 				"Too many verification reports submitted. Please try again later."

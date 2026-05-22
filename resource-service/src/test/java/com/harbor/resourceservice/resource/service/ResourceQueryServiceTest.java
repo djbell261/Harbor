@@ -3,6 +3,7 @@ package com.harbor.resourceservice.resource.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.harbor.resourceservice.category.entity.ResourceCategory;
+import com.harbor.resourceservice.observability.HarborMetrics;
 import com.harbor.resourceservice.resource.dto.ResourceSearchResponse;
 import com.harbor.resourceservice.resource.entity.Resource;
 import com.harbor.resourceservice.resource.repository.ResourceHourRepository;
@@ -19,6 +20,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 class ResourceQueryServiceTest {
 
@@ -30,7 +32,8 @@ class ResourceQueryServiceTest {
 			proxy(ResourceHourRepository.class, (proxy, method, args) -> defaultValue(method.getReturnType())),
 			proxy(ResourceStatusRepository.class, (proxy, method, args) -> defaultValue(method.getReturnType())),
 			proxy(VerificationReportRepository.class, (proxy, method, args) -> defaultValue(method.getReturnType())),
-			new ResourceFreshnessService(30)
+			new ResourceFreshnessService(30),
+			new HarborMetrics(new SimpleMeterRegistry(), resourceRepositoryReturningSearch(resource), 30)
 		);
 
 		ResourceSearchResponse response = service.searchResources(null, null, null, 1, 1);

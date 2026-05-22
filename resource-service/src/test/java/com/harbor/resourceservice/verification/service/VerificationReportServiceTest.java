@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.harbor.resourceservice.resource.entity.Resource;
 import com.harbor.resourceservice.resource.repository.ResourceRepository;
+import com.harbor.resourceservice.observability.HarborMetrics;
 import com.harbor.resourceservice.verification.dto.CreateVerificationReportRequest;
 import com.harbor.resourceservice.verification.dto.ReviewVerificationReportRequest;
 import com.harbor.resourceservice.verification.dto.VerificationReportResponse;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -35,7 +37,8 @@ class VerificationReportServiceTest {
 					return args[0];
 				}
 				return defaultValue(method.getReturnType());
-			})
+			}),
+			harborMetrics()
 		);
 
 		service.createReport(
@@ -59,7 +62,8 @@ class VerificationReportServiceTest {
 					return List.of(report);
 				}
 				return defaultValue(method.getReturnType());
-			})
+			}),
+			harborMetrics()
 		);
 
 		List<VerificationReportResponse> reports = service.findReports(VerificationStatus.pending);
@@ -73,7 +77,8 @@ class VerificationReportServiceTest {
 		VerificationReport report = report();
 		VerificationReportService service = new VerificationReportService(
 			resourceRepositoryReturning(report.getResource()),
-			reviewRepositoryReturning(report)
+			reviewRepositoryReturning(report),
+			harborMetrics()
 		);
 
 		VerificationReportResponse response = service.acceptReport(
@@ -96,7 +101,8 @@ class VerificationReportServiceTest {
 		report.setStatus(VerificationStatus.accepted);
 		VerificationReportService service = new VerificationReportService(
 			resourceRepositoryReturning(report.getResource()),
-			reviewRepositoryReturning(report)
+			reviewRepositoryReturning(report),
+			harborMetrics()
 		);
 
 		try {
@@ -115,7 +121,8 @@ class VerificationReportServiceTest {
 		VerificationReport report = report();
 		VerificationReportService service = new VerificationReportService(
 			resourceRepositoryReturning(report.getResource()),
-			reviewRepositoryReturning(report)
+			reviewRepositoryReturning(report),
+			harborMetrics()
 		);
 
 		VerificationReportResponse response = service.rejectReport(
@@ -153,6 +160,10 @@ class VerificationReportServiceTest {
 
 	private VerificationReportRepository reportRepository(InvocationHandler handler) {
 		return proxy(VerificationReportRepository.class, handler);
+	}
+
+	private HarborMetrics harborMetrics() {
+		return new HarborMetrics(new SimpleMeterRegistry(), resourceRepositoryReturning(resource()), 30);
 	}
 
 	@SuppressWarnings("unchecked")

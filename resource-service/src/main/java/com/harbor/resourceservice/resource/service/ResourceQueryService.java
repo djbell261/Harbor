@@ -3,6 +3,7 @@ package com.harbor.resourceservice.resource.service;
 import com.harbor.resourceservice.resource.dto.ResourceDetailResponse;
 import com.harbor.resourceservice.resource.dto.ResourceSearchResponse;
 import com.harbor.resourceservice.resource.dto.ResourceSummaryResponse;
+import com.harbor.resourceservice.observability.HarborMetrics;
 import com.harbor.resourceservice.resource.dto.CommunityUpdateResponse;
 import com.harbor.resourceservice.resource.dto.VerificationMetadataResponse;
 import com.harbor.resourceservice.resource.entity.Resource;
@@ -34,19 +35,22 @@ public class ResourceQueryService {
 	private final ResourceStatusRepository statusRepository;
 	private final VerificationReportRepository reportRepository;
 	private final ResourceFreshnessService freshnessService;
+	private final HarborMetrics harborMetrics;
 
 	public ResourceQueryService(
 		ResourceRepository resourceRepository,
 		ResourceHourRepository hourRepository,
 		ResourceStatusRepository statusRepository,
 		VerificationReportRepository reportRepository,
-		ResourceFreshnessService freshnessService
+		ResourceFreshnessService freshnessService,
+		HarborMetrics harborMetrics
 	) {
 		this.resourceRepository = resourceRepository;
 		this.hourRepository = hourRepository;
 		this.statusRepository = statusRepository;
 		this.reportRepository = reportRepository;
 		this.freshnessService = freshnessService;
+		this.harborMetrics = harborMetrics;
 	}
 
 	public List<ResourceSummaryResponse> findResources(
@@ -56,6 +60,7 @@ public class ResourceQueryService {
 		int page,
 		int size
 	) {
+		harborMetrics.recordResourceSearch("legacy");
 		Pageable pageable = PageRequest.of(Math.max(page, 0), clamp(size, 1, 100));
 		return resourceRepository.findPublicResources(
 				blankToNull(category),
@@ -80,6 +85,7 @@ public class ResourceQueryService {
 		int page,
 		int size
 	) {
+		harborMetrics.recordResourceSearch("paginated");
 		Pageable pageable = PageRequest.of(Math.max(page, 0), clamp(size, 1, 100));
 		var resourcePage = resourceRepository.searchPublicResources(
 			blankToNull(category),

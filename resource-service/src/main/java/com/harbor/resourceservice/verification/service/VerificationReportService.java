@@ -1,6 +1,7 @@
 package com.harbor.resourceservice.verification.service;
 
 import com.harbor.resourceservice.resource.entity.Resource;
+import com.harbor.resourceservice.observability.HarborMetrics;
 import com.harbor.resourceservice.resource.repository.ResourceRepository;
 import com.harbor.resourceservice.verification.dto.CreateVerificationReportRequest;
 import com.harbor.resourceservice.verification.dto.ReviewVerificationReportRequest;
@@ -23,13 +24,16 @@ public class VerificationReportService {
 
 	private final ResourceRepository resourceRepository;
 	private final VerificationReportRepository reportRepository;
+	private final HarborMetrics harborMetrics;
 
 	public VerificationReportService(
 		ResourceRepository resourceRepository,
-		VerificationReportRepository reportRepository
+		VerificationReportRepository reportRepository,
+		HarborMetrics harborMetrics
 	) {
 		this.resourceRepository = resourceRepository;
 		this.reportRepository = reportRepository;
+		this.harborMetrics = harborMetrics;
 	}
 
 	@Transactional
@@ -43,7 +47,9 @@ public class VerificationReportService {
 		report.setDescription(trimToNull(request.description()));
 		report.setSuggestedValue(request.suggestedValue());
 
-		return VerificationReportResponse.from(reportRepository.save(report));
+		VerificationReport savedReport = reportRepository.save(report);
+		harborMetrics.recordVerificationSubmission(savedReport.getReportType().name());
+		return VerificationReportResponse.from(savedReport);
 	}
 
 	@Transactional(readOnly = true)
@@ -64,6 +70,7 @@ public class VerificationReportService {
 		VerificationReport report = findReportWithResource(id);
 		ensurePending(report);
 		applyReview(report, VerificationStatus.accepted, request);
+		harborMetrics.recordAdminReview(VerificationStatus.accepted.name());
 		Resource resource = report.getResource();
 		Instant now = Instant.now();
 		resource.setLastVerifiedAt(now);
@@ -77,6 +84,7 @@ public class VerificationReportService {
 		VerificationReport report = findReportWithResource(id);
 		ensurePending(report);
 		applyReview(report, VerificationStatus.rejected, request);
+		harborMetrics.recordAdminReview(VerificationStatus.rejected.name());
 		return VerificationReportResponse.from(reportRepository.save(report));
 	}
 

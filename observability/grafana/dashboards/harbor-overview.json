@@ -1,0 +1,113 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [{"expr": "sum(rate(http_server_requests_seconds_count{application=\"resource-service\"}[5m]))", "legendFormat": "requests/sec"}],
+      "title": "Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "percentunit"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 8, "y": 0},
+      "id": 2,
+      "targets": [{"expr": "sum(rate(http_server_requests_seconds_count{application=\"resource-service\",status=~\"4..|5..\"}[5m])) / sum(rate(http_server_requests_seconds_count{application=\"resource-service\"}[5m]))", "legendFormat": "error rate"}],
+      "title": "Error Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 16, "y": 0},
+      "id": 3,
+      "targets": [{"expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"resource-service\"}[5m])) by (le))", "legendFormat": "p95 latency"}],
+      "title": "P95 Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 6, "x": 0, "y": 7},
+      "id": 4,
+      "targets": [{"expr": "harbor_resources_stale_total", "legendFormat": "stale resources"}],
+      "title": "Stale Resources",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 6, "x": 6, "y": 7},
+      "id": 5,
+      "targets": [{"expr": "sum(rate(harbor_verification_reports_total[5m])) by (report_type)", "legendFormat": "{{report_type}}"}],
+      "title": "Verification Traffic",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 6, "x": 12, "y": 7},
+      "id": 6,
+      "targets": [{"expr": "rate(harbor_verification_rate_limit_rejections_total[5m])", "legendFormat": "rejections"}],
+      "title": "Rate Limit Activity",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 6, "x": 18, "y": 7},
+      "id": 7,
+      "targets": [{"expr": "sum(jvm_memory_used_bytes{application=\"resource-service\"}) by (area)", "legendFormat": "{{area}}"}],
+      "title": "JVM Memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 0, "y": 14},
+      "id": 8,
+      "targets": [{"expr": "hikaricp_connections_active{application=\"resource-service\"}", "legendFormat": "active"}],
+      "title": "Active DB Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 8, "y": 14},
+      "id": 9,
+      "targets": [{"expr": "sum(rate(harbor_admin_reviews_total[5m])) by (decision)", "legendFormat": "{{decision}}"}],
+      "title": "Admin Reviews",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 16, "y": 14},
+      "id": 10,
+      "targets": [{"expr": "sum(rate(harbor_resource_search_requests_total[5m])) by (endpoint)", "legendFormat": "{{endpoint}}"}],
+      "title": "Resource Search",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 40,
+  "tags": ["harbor", "reliability"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Harbor Overview",
+  "uid": "harbor-overview",
+  "version": 1,
+  "weekStart": ""
+}

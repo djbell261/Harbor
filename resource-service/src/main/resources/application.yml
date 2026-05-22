@@ -23,6 +23,12 @@ spring:
     enabled: true
 
 management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
   endpoints:
     web:
       exposure:
@@ -44,7 +50,7 @@ springdoc:
 
 logging:
   pattern:
-    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%5p service=${spring.application.name} correlationId=%X{correlationId:-none} thread=%t logger=%logger{36} message=%m%n"
+    console: "time=%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%5p service=${spring.application.name} correlationId=%X{correlationId:-none} thread=%t logger=%logger{36} message=\"%m\"%n"
 
 harbor:
   verification:

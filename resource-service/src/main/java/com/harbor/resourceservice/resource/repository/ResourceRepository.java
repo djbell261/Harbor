@@ -57,6 +57,14 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
 		Pageable pageable
 	);
 
+	@Query("""
+		select count(r) from Resource r
+		where r.deletedAt is null
+		  and r.visibility = 'public'
+		  and (r.lastVerifiedAt is null or r.lastVerifiedAt < :cutoff)
+		""")
+	long countPublicStaleResources(@Param("cutoff") java.time.Instant cutoff);
+
 	@EntityGraph(attributePaths = {"category", "organization"})
 	@Query("""
 		select r from Resource r

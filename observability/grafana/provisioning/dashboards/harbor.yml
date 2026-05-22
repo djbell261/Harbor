@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Harbor
+    orgId: 1
+    folder: Harbor
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

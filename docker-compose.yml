@@ -22,6 +22,36 @@
       depends_on:
         - postgres
 
+    prometheus:
+      image: prom/prometheus:v2.55.1
+      container_name: harbor-prometheus
+      command:
+        - "--config.file=/etc/prometheus/prometheus.yml"
+        - "--storage.tsdb.path=/prometheus"
+      ports:
+        - "9090:9090"
+      volumes:
+        - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        - harbor_prometheus_data:/prometheus
+      depends_on:
+        - resource-service
+
+    grafana:
+      image: grafana/grafana:11.3.1
+      container_name: harbor-grafana
+      ports:
+        - "3000:3000"
+      environment:
+        GF_SECURITY_ADMIN_USER: admin
+        GF_SECURITY_ADMIN_PASSWORD: harbor
+      volumes:
+        - harbor_grafana_data:/var/lib/grafana
+        - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+        - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      depends_on:
+        - prometheus
+
   volumes:
     harbor_postgres_data:
-
+    harbor_prometheus_data:
+    harbor_grafana_data:

@@ -11,4 +11,6 @@ public interface ResourceStatusRepository extends JpaRepository<ResourceStatus, 
 	Optional<ResourceStatus> findFirstByResourceIdAndEffectiveUntilIsNullOrderByEffectiveFromDesc(UUID resourceId);
 
 	List<ResourceStatus> findByResourceIdOrderByEffectiveFromDesc(UUID resourceId);
+
+	List<ResourceStatus> findTop5ByResourceIdOrderByEffectiveFromDesc(UUID resourceId);
 }

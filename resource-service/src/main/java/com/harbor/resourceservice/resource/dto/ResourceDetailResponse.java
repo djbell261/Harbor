@@ -56,8 +56,14 @@ public record ResourceDetailResponse(
 	Instant lastVerifiedAt,
 	@Schema(description = "Confidence score from 0.000 to 1.000. Higher means Harbor has more confidence in the listing.", example = "0.850")
 	BigDecimal confidenceScore,
+	@Schema(description = "True when the resource has never been verified or is past the configured verification freshness threshold.", example = "false")
+	boolean stale,
+	@Schema(description = "True when the resource is stale or has pending community reports that need admin review.", example = "true")
+	boolean needsVerification,
 	@Schema(description = "Current availability status for the resource.")
 	ResourceStatusResponse currentStatus,
+	@Schema(description = "Recent status history for the resource, newest first.")
+	List<ResourceStatusResponse> statusHistory,
 	@Schema(description = "Weekly operating hours. dayOfWeek uses 0 for Sunday through 6 for Saturday.")
 	List<ResourceHourResponse> hours,
 	@Schema(description = "Organization associated with the resource, when known.")
@@ -70,9 +76,11 @@ public record ResourceDetailResponse(
 	public static ResourceDetailResponse from(
 		Resource resource,
 		ResourceStatus currentStatus,
+		List<ResourceStatus> statusHistory,
 		List<ResourceHour> hours,
 		VerificationMetadataResponse verification,
-		List<CommunityUpdateResponse> communityUpdates
+		List<CommunityUpdateResponse> communityUpdates,
+		boolean stale
 	) {
 		return new ResourceDetailResponse(
 			resource.getId(),
@@ -97,7 +105,10 @@ public record ResourceDetailResponse(
 			resource.getSourceUrl(),
 			resource.getLastVerifiedAt(),
 			resource.getConfidenceScore(),
+			stale,
+			stale || verification.pendingReportCount() > 0,
 			currentStatus == null ? null : ResourceStatusResponse.from(currentStatus),
+			statusHistory.stream().map(ResourceStatusResponse::from).toList(),
 			hours.stream().map(ResourceHourResponse::from).toList(),
 			OrganizationSummaryResponse.from(resource.getOrganization()),
 			verification,

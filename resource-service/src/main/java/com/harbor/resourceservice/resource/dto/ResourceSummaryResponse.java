@@ -39,13 +39,18 @@ public record ResourceSummaryResponse(
 	Instant lastVerifiedAt,
 	@Schema(description = "Confidence score from 0.000 to 1.000. Higher means Harbor has more confidence in the listing.", example = "0.850")
 	BigDecimal confidenceScore,
+	@Schema(description = "True when the resource has never been verified or is past the configured verification freshness threshold.", example = "false")
+	boolean stale,
+	@Schema(description = "True when the resource is stale or has pending community reports that need admin review.", example = "true")
+	boolean needsVerification,
 	@Schema(description = "Community verification and freshness metadata.")
 	VerificationMetadataResponse verification
 ) {
 	public static ResourceSummaryResponse from(
 		Resource resource,
 		ResourceStatus currentStatus,
-		VerificationMetadataResponse verification
+		VerificationMetadataResponse verification,
+		boolean stale
 	) {
 		return new ResourceSummaryResponse(
 			resource.getId(),
@@ -61,6 +66,8 @@ public record ResourceSummaryResponse(
 			currentStatus == null ? "unknown" : currentStatus.getStatus().name(),
 			resource.getLastVerifiedAt(),
 			resource.getConfidenceScore(),
+			stale,
+			stale || verification.pendingReportCount() > 0,
 			verification
 		);
 	}

@@ -3,9 +3,14 @@ package com.harbor.resourceservice.verification.service;
 import com.harbor.resourceservice.resource.entity.Resource;
 import com.harbor.resourceservice.resource.repository.ResourceRepository;
 import com.harbor.resourceservice.verification.dto.CreateVerificationReportRequest;
+import com.harbor.resourceservice.verification.dto.ReviewVerificationReportRequest;
 import com.harbor.resourceservice.verification.dto.VerificationReportResponse;
 import com.harbor.resourceservice.verification.entity.VerificationReport;
+import com.harbor.resourceservice.verification.enums.VerificationStatus;
 import com.harbor.resourceservice.verification.repository.VerificationReportRepository;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,5 +44,60 @@ public class VerificationReportService {
 		report.setSuggestedValue(request.suggestedValue());
 
 		return VerificationReportResponse.from(reportRepository.save(report));
+	}
+
+	@Transactional(readOnly = true)
+	public List<VerificationReportResponse> findReports(VerificationStatus status) {
+		return reportRepository.findByStatusOrderByCreatedAtAsc(status)
+			.stream()
+			.map(VerificationReportResponse::from)
+			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public VerificationReportResponse findReport(UUID id) {
+		return VerificationReportResponse.from(findReportWithResource(id));
+	}
+
+	@Transactional
+	public VerificationReportResponse acceptReport(UUID id, ReviewVerificationReportRequest request) {
+		VerificationReport report = findReportWithResource(id);
+		applyReview(report, VerificationStatus.accepted, request);
+		Resource resource = report.getResource();
+		Instant now = Instant.now();
+		resource.setLastVerifiedAt(now);
+		resource.setUpdatedAt(now);
+		resource.setConfidenceScore(increaseConfidence(resource.getConfidenceScore()));
+		return VerificationReportResponse.from(reportRepository.save(report));
+	}
+
+	@Transactional
+	public VerificationReportResponse rejectReport(UUID id, ReviewVerificationReportRequest request) {
+		VerificationReport report = findReportWithResource(id);
+		applyReview(report, VerificationStatus.rejected, request);
+		return VerificationReportResponse.from(reportRepository.save(report));
+	}
+
+	private VerificationReport findReportWithResource(UUID id) {
+		return reportRepository.findWithResourceById(id)
+			.orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Verification report not found"));
+	}
+
+	private void applyReview(
+		VerificationReport report,
+		VerificationStatus decision,
+		ReviewVerificationReportRequest request
+	) {
+		report.setStatus(decision);
+		report.setReviewedAt(Instant.now());
+		report.setReviewDecision(decision.name());
+		report.setReviewNotes(request == null ? null : request.reviewNotes());
+		String reviewedBy = request == null ? null : request.reviewedBy();
+		report.setReviewedBy(reviewedBy == null || reviewedBy.isBlank() ? "admin" : reviewedBy.trim());
+	}
+
+	private BigDecimal increaseConfidence(BigDecimal confidenceScore) {
+		BigDecimal current = confidenceScore == null ? BigDecimal.valueOf(0.500) : confidenceScore;
+		return current.add(BigDecimal.valueOf(0.050)).min(BigDecimal.ONE);
 	}
 }

@@ -61,6 +61,18 @@ public class VerificationReport {
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
+	@Column(name = "reviewed_at")
+	private Instant reviewedAt;
+
+	@Column(name = "review_notes")
+	private String reviewNotes;
+
+	@Column(name = "review_decision", length = 40)
+	private String reviewDecision;
+
+	@Column(name = "reviewed_by", length = 120)
+	private String reviewedBy;
+
 	@PrePersist
 	void prePersist() {
 		if (createdAt == null) {

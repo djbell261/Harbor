@@ -39,3 +39,7 @@ springdoc:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%5p service=${spring.application.name} correlationId=%X{correlationId:-none} thread=%t logger=%logger{36} message=%m%n"
+
+harbor:
+  verification:
+    stale-resource-days: ${HARBOR_STALE_RESOURCE_DAYS:30}

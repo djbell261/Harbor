@@ -10,6 +10,7 @@ import com.harbor.resourceservice.resource.repository.ResourceHourRepository;
 import com.harbor.resourceservice.resource.repository.ResourceRepository;
 import com.harbor.resourceservice.resource.repository.ResourceStatusRepository;
 import com.harbor.resourceservice.verification.entity.VerificationReport;
+import com.harbor.resourceservice.verification.enums.VerificationStatus;
 import com.harbor.resourceservice.verification.repository.VerificationReportRepository;
 import java.time.Duration;
 import java.time.Instant;
@@ -31,17 +32,20 @@ public class ResourceQueryService {
 	private final ResourceHourRepository hourRepository;
 	private final ResourceStatusRepository statusRepository;
 	private final VerificationReportRepository reportRepository;
+	private final ResourceFreshnessService freshnessService;
 
 	public ResourceQueryService(
 		ResourceRepository resourceRepository,
 		ResourceHourRepository hourRepository,
 		ResourceStatusRepository statusRepository,
-		VerificationReportRepository reportRepository
+		VerificationReportRepository reportRepository,
+		ResourceFreshnessService freshnessService
 	) {
 		this.resourceRepository = resourceRepository;
 		this.hourRepository = hourRepository;
 		this.statusRepository = statusRepository;
 		this.reportRepository = reportRepository;
+		this.freshnessService = freshnessService;
 	}
 
 	public List<ResourceSummaryResponse> findResources(
@@ -62,7 +66,8 @@ public class ResourceQueryService {
 			.map(resource -> ResourceSummaryResponse.from(
 				resource,
 				findCurrentStatus(resource.getId()),
-				buildVerificationMetadata(resource)
+				buildVerificationMetadata(resource),
+				isStale(resource)
 			))
 			.toList();
 	}
@@ -74,15 +79,21 @@ public class ResourceQueryService {
 		return ResourceDetailResponse.from(
 			resource,
 			findCurrentStatus(resource.getId()),
+			findStatusHistory(resource.getId()),
 			hourRepository.findByResourceIdOrderByDayOfWeekAscOpensAtAsc(resource.getId()),
 			buildVerificationMetadata(resource),
-			findCommunityUpdates(resource.getId())
+			findCommunityUpdates(resource.getId()),
+			isStale(resource)
 		);
 	}
 
 	private ResourceStatus findCurrentStatus(UUID resourceId) {
 		return statusRepository.findFirstByResourceIdAndEffectiveUntilIsNullOrderByEffectiveFromDesc(resourceId)
 			.orElse(null);
+	}
+
+	private List<ResourceStatus> findStatusHistory(UUID resourceId) {
+		return statusRepository.findTop5ByResourceIdOrderByEffectiveFromDesc(resourceId);
 	}
 
 	private String blankToNull(String value) {
@@ -96,6 +107,7 @@ public class ResourceQueryService {
 	private VerificationMetadataResponse buildVerificationMetadata(Resource resource) {
 		UUID resourceId = resource.getId();
 		long reportCount = reportRepository.countByResourceId(resourceId);
+		long pendingReportCount = reportRepository.countByResourceIdAndStatus(resourceId, VerificationStatus.pending);
 		Instant lastCommunityReportAt = reportRepository.findFirstByResourceIdOrderByCreatedAtDesc(resourceId)
 			.map(VerificationReport::getCreatedAt)
 			.orElse(null);
@@ -108,10 +120,16 @@ public class ResourceQueryService {
 
 		return new VerificationMetadataResponse(
 			reportCount,
+			pendingReportCount,
 			lastCommunityReportAt,
 			communityConfirmed,
-			recentlyUpdated
+			recentlyUpdated,
+			freshnessService.staleResourceDays()
 		);
+	}
+
+	private boolean isStale(Resource resource) {
+		return freshnessService.isStale(resource.getLastVerifiedAt(), Instant.now());
 	}
 
 	private List<CommunityUpdateResponse> findCommunityUpdates(UUID resourceId) {

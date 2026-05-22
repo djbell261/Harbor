@@ -304,10 +304,12 @@ If that port is already in use, Vite may choose another `517x` port. The backend
 
 ## Docker Setup
 
-The root `docker-compose.yml` starts:
+The root `docker-compose.yml` is for local/dev only. It starts:
 
 - `postgres`: PostgreSQL database with persistent Docker volume.
 - `resource-service`: Spring Boot API container on port `8081`.
+- `prometheus`: local metrics scraper on port `9090`.
+- `grafana`: local dashboard UI on port `3000`.
 
 Common commands:
 
@@ -324,9 +326,13 @@ docker compose down -v
 Backend configuration is provided through environment variables. Use `.env.example` as a safe template and keep local `.env` files out of commits.
 
 ```text
+SPRING_PROFILES_ACTIVE=docker
 SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/harbor
 SPRING_DATASOURCE_USERNAME=postgres
-SPRING_DATASOURCE_PASSWORD=change-me
+SPRING_DATASOURCE_PASSWORD=harbor-local-password
+HARBOR_SEED_DATA_ENABLED=true
+HARBOR_OPENAPI_ENABLED=true
+HARBOR_CORS_ALLOWED_ORIGIN_PATTERNS=http://localhost:517*,http://127.0.0.1:517*
 ```
 
 Frontend configuration:
@@ -334,6 +340,25 @@ Frontend configuration:
 ```text
 VITE_API_BASE_URL=http://localhost:8081
 ```
+
+## Deployment Readiness
+
+Harbor supports environment-specific backend profiles:
+
+- `local`: host-based local development with seed data and OpenAPI enabled.
+- `docker`: local Docker Compose development with seed data and OpenAPI enabled.
+- `prod`: production-safe runtime defaults with externalized secrets, explicit CORS, OpenAPI disabled by default, and seed data disabled.
+
+Production deployments should set `SPRING_PROFILES_ACTIVE=prod`, provide database credentials through the runtime secret manager, set `HARBOR_CORS_ALLOWED_ORIGIN_PATTERNS` to the frontend domain, and keep `HARBOR_SEED_DATA_ENABLED=false`.
+
+Version metadata is available at:
+
+```text
+/api/version
+/actuator/info
+```
+
+See `docs/deployment-readiness.md` for backend deployment, frontend deployment, migration strategy, rollback plan, and health check verification.
 
 ## Repository Layout
 

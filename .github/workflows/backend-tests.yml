@@ -21,5 +21,15 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Run Maven tests
-        run: ./mvnw test
+      - name: Run Maven tests with local profile
+        run: ./mvnw test -Dspring.profiles.active=local
+
+      - name: Validate prod profile build configuration
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/harbor
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: ci-placeholder
+          HARBOR_CORS_ALLOWED_ORIGIN_PATTERNS: https://harbor.example.org
+          HARBOR_OPENAPI_ENABLED: "false"
+          HARBOR_SEED_DATA_ENABLED: "false"
+        run: ./mvnw test -Dspring.profiles.active=prod

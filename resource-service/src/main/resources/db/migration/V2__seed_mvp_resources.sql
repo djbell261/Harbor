@@ -265,6 +265,7 @@ SELECT
   sr.source_url
 FROM seed_resources sr
 JOIN resource_categories rc ON rc.code = sr.category_code
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true'
 ON CONFLICT (id) DO UPDATE SET
   category_id = EXCLUDED.category_id,
   name = EXCLUDED.name,
@@ -291,7 +292,8 @@ ON CONFLICT (id) DO UPDATE SET
   deleted_at = NULL;
 
 DELETE FROM resource_hours
-WHERE resource_id IN (
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true'
+  AND resource_id IN (
   '11111111-1111-4111-8111-111111111111'::uuid,
   '22222222-2222-4222-8222-222222222222'::uuid,
   '33333333-3333-4333-8333-333333333333'::uuid,
@@ -302,7 +304,9 @@ WHERE resource_id IN (
   '88888888-8888-4888-8888-888888888888'::uuid
 );
 
-INSERT INTO resource_hours (resource_id, day_of_week, opens_at, closes_at, is_closed, notes) VALUES
+INSERT INTO resource_hours (resource_id, day_of_week, opens_at, closes_at, is_closed, notes)
+SELECT *
+FROM (VALUES
   ('11111111-1111-4111-8111-111111111111', 0, NULL, NULL, TRUE, 'Closed'),
   ('11111111-1111-4111-8111-111111111111', 1, '09:00', '12:00', FALSE, 'Food pantry distribution'),
   ('11111111-1111-4111-8111-111111111111', 2, '09:00', '12:00', FALSE, 'Food pantry distribution'),
@@ -365,10 +369,13 @@ INSERT INTO resource_hours (resource_id, day_of_week, opens_at, closes_at, is_cl
   ('88888888-8888-4888-8888-888888888888', 3, '08:00', '16:30', FALSE, 'Customer assistance office hours'),
   ('88888888-8888-4888-8888-888888888888', 4, '08:00', '16:30', FALSE, 'Customer assistance office hours'),
   ('88888888-8888-4888-8888-888888888888', 5, '08:00', '16:30', FALSE, 'Customer assistance office hours'),
-  ('88888888-8888-4888-8888-888888888888', 6, NULL, NULL, TRUE, 'Office closed');
+  ('88888888-8888-4888-8888-888888888888', 6, NULL, NULL, TRUE, 'Office closed')
+) AS seeded(resource_id, day_of_week, opens_at, closes_at, is_closed, notes)
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true';
 
 DELETE FROM resource_status
-WHERE resource_id IN (
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true'
+  AND resource_id IN (
   '11111111-1111-4111-8111-111111111111'::uuid,
   '22222222-2222-4222-8222-222222222222'::uuid,
   '33333333-3333-4333-8333-333333333333'::uuid,
@@ -379,7 +386,9 @@ WHERE resource_id IN (
   '88888888-8888-4888-8888-888888888888'::uuid
 );
 
-INSERT INTO resource_status (resource_id, status, reason, effective_from, reported_by_type) VALUES
+INSERT INTO resource_status (resource_id, status, reason, effective_from, reported_by_type)
+SELECT *
+FROM (VALUES
   ('11111111-1111-4111-8111-111111111111', 'open', 'Seeded MVP listing. Call before visiting to confirm pantry operations.', '2026-05-21T00:00:00Z', 'system'),
   ('22222222-2222-4222-8222-222222222222', 'open', 'Seeded MVP listing. Call before visiting to confirm shelter intake and availability.', '2026-05-21T00:00:00Z', 'system'),
   ('33333333-3333-4333-8333-333333333333', 'open', 'Seeded MVP listing. Call before visiting to schedule or confirm clinic hours.', '2026-05-21T00:00:00Z', 'system'),
@@ -387,4 +396,6 @@ INSERT INTO resource_status (resource_id, status, reason, effective_from, report
   ('55555555-5555-4555-8555-555555555555', 'limited', 'Community center is open during posted hours; emergency warming/cooling activation varies.', '2026-05-21T00:00:00Z', 'system'),
   ('66666666-6666-4666-8666-666666666666', 'open', 'Available during library open hours and subject to library policies.', '2026-05-21T00:00:00Z', 'system'),
   ('77777777-7777-4777-8777-777777777777', 'open', 'Available during library open hours; outlet availability may vary.', '2026-05-21T00:00:00Z', 'system'),
-  ('88888888-8888-4888-8888-888888888888', 'open', 'Seeded MVP listing. Call DART for current service and office information.', '2026-05-21T00:00:00Z', 'system');
+  ('88888888-8888-4888-8888-888888888888', 'open', 'Seeded MVP listing. Call DART for current service and office information.', '2026-05-21T00:00:00Z', 'system')
+) AS seeded(resource_id, status, reason, effective_from, reported_by_type)
+WHERE current_setting('harbor.seed_data.enabled', true) = 'true';

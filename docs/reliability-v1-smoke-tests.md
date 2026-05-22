@@ -52,3 +52,38 @@ curl -sS "http://localhost:8081/api/resources/$RESOURCE_ID"
 ```
 
 Expected detail fields include `stale`, `needsVerification`, `statusHistory`, `communityUpdates`, and `verification.pendingReportCount`.
+
+Check paginated resource search:
+
+```sh
+curl -sS "http://localhost:8081/api/resources/search?page=0&size=2"
+```
+
+Expected fields include `items`, `page`, `size`, `totalItems`, `totalPages`, `hasNext`, and `hasPrevious`.
+
+Check rate limiting:
+
+```sh
+for i in 1 2 3 4 5 6; do
+  curl -sS -o /dev/null -w "%{http_code}\n" -X POST "http://localhost:8081/api/resources/$RESOURCE_ID/verification-reports" \
+    -H "Content-Type: application/json" \
+    -d '{"reportType":"other","description":"Rate limit smoke test."}'
+done
+```
+
+With the default limit, the sixth request from the same IP should return `429` with the standard structured error body and `X-Correlation-Id`.
+
+Check duplicate review protection:
+
+```sh
+REPORT_ID=<id from pending list>
+curl -sS -X POST "http://localhost:8081/api/admin/verification-reports/$REPORT_ID/accept" \
+  -H "Content-Type: application/json" \
+  -d '{"reviewNotes":"Confirmed once.","reviewedBy":"admin"}'
+
+curl -sS -X POST "http://localhost:8081/api/admin/verification-reports/$REPORT_ID/reject" \
+  -H "Content-Type: application/json" \
+  -d '{"reviewNotes":"Second review should fail.","reviewedBy":"admin"}'
+```
+
+The second review request should return `409 Conflict` with the standard structured error body.

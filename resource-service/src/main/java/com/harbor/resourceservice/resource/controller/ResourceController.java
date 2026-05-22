@@ -2,6 +2,7 @@ package com.harbor.resourceservice.resource.controller;
 
 import com.harbor.resourceservice.common.response.ApiErrorResponse;
 import com.harbor.resourceservice.resource.dto.ResourceDetailResponse;
+import com.harbor.resourceservice.resource.dto.ResourceSearchResponse;
 import com.harbor.resourceservice.resource.dto.ResourceSummaryResponse;
 import com.harbor.resourceservice.resource.service.ResourceQueryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -105,6 +106,29 @@ public class ResourceController {
 		@RequestParam(defaultValue = "50") @Min(1) @Max(100) int size
 	) {
 		return resourceQueryService.findResources(category, city, postalCode, page, size);
+	}
+
+	@GetMapping("/search")
+	@Operation(
+		summary = "Search public resources with pagination metadata",
+		description = """
+			Returns public resource summaries with pagination metadata. This endpoint is additive;
+			/api/resources remains a plain array for MVP frontend compatibility.
+			"""
+	)
+	public ResourceSearchResponse searchResources(
+		@Parameter(description = "Optional category code.", example = "food")
+		@RequestParam(required = false) String category,
+		@Parameter(description = "Optional city filter.", example = "Wilmington")
+		@RequestParam(required = false) String city,
+		@Parameter(description = "Optional postal code filter.", example = "19806")
+		@RequestParam(required = false) String postalCode,
+		@Parameter(description = "Zero-based page number.", example = "0")
+		@RequestParam(defaultValue = "0") @Min(0) int page,
+		@Parameter(description = "Maximum number of resources to return. Must be between 1 and 100.", example = "25")
+		@RequestParam(defaultValue = "50") @Min(1) @Max(100) int size
+	) {
+		return resourceQueryService.searchResources(category, city, postalCode, page, size);
 	}
 
 	@GetMapping("/{id}")

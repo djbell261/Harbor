@@ -4,6 +4,7 @@ import com.harbor.resourceservice.resource.entity.Resource;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,6 +24,33 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
 		order by r.name asc
 		""")
 	List<Resource> findPublicResources(
+		@Param("categoryCode") String categoryCode,
+		@Param("city") String city,
+		@Param("postalCode") String postalCode,
+		Pageable pageable
+	);
+
+	@EntityGraph(attributePaths = {"category", "organization"})
+	@Query(
+		value = """
+			select r from Resource r
+			where r.deletedAt is null
+			  and r.visibility = 'public'
+			  and (:categoryCode is null or r.category.code = :categoryCode)
+			  and (:city is null or r.city = :city)
+			  and (:postalCode is null or r.postalCode = :postalCode)
+			order by r.name asc
+			""",
+		countQuery = """
+			select count(r) from Resource r
+			where r.deletedAt is null
+			  and r.visibility = 'public'
+			  and (:categoryCode is null or r.category.code = :categoryCode)
+			  and (:city is null or r.city = :city)
+			  and (:postalCode is null or r.postalCode = :postalCode)
+			"""
+	)
+	Page<Resource> searchPublicResources(
 		@Param("categoryCode") String categoryCode,
 		@Param("city") String city,
 		@Param("postalCode") String postalCode,

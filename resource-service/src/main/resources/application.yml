@@ -31,6 +31,12 @@ management:
     health:
       probes:
         enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+  health:
+    db:
+      enabled: true
 
 springdoc:
   swagger-ui:
@@ -43,3 +49,6 @@ logging:
 harbor:
   verification:
     stale-resource-days: ${HARBOR_STALE_RESOURCE_DAYS:30}
+    rate-limit:
+      max-submissions: ${HARBOR_VERIFICATION_RATE_LIMIT_MAX_SUBMISSIONS:5}
+      window-minutes: ${HARBOR_VERIFICATION_RATE_LIMIT_WINDOW_MINUTES:10}

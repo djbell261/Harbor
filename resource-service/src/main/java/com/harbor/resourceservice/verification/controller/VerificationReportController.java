@@ -3,6 +3,7 @@ package com.harbor.resourceservice.verification.controller;
 import com.harbor.resourceservice.common.response.ApiErrorResponse;
 import com.harbor.resourceservice.verification.dto.CreateVerificationReportRequest;
 import com.harbor.resourceservice.verification.dto.VerificationReportResponse;
+import com.harbor.resourceservice.verification.service.VerificationReportRateLimiter;
 import com.harbor.resourceservice.verification.service.VerificationReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -29,9 +31,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class VerificationReportController {
 
 	private final VerificationReportService reportService;
+	private final VerificationReportRateLimiter rateLimiter;
 
-	public VerificationReportController(VerificationReportService reportService) {
+	public VerificationReportController(
+		VerificationReportService reportService,
+		VerificationReportRateLimiter rateLimiter
+	) {
 		this.reportService = reportService;
+		this.rateLimiter = rateLimiter;
 	}
 
 	@PostMapping
@@ -116,8 +123,23 @@ public class VerificationReportController {
 				}
 			)
 		)
-		@org.springframework.web.bind.annotation.RequestBody CreateVerificationReportRequest request
+		@org.springframework.web.bind.annotation.RequestBody CreateVerificationReportRequest request,
+		HttpServletRequest servletRequest
 	) {
+		if (!rateLimiter.tryAcquire(clientIp(servletRequest))) {
+			throw new org.springframework.web.server.ResponseStatusException(
+				HttpStatus.TOO_MANY_REQUESTS,
+				"Too many verification reports submitted. Please try again later."
+			);
+		}
 		return reportService.createReport(resourceId, request);
+	}
+
+	private String clientIp(HttpServletRequest request) {
+		String forwardedFor = request.getHeader("X-Forwarded-For");
+		if (forwardedFor != null && !forwardedFor.isBlank()) {
+			return forwardedFor.split(",")[0].trim();
+		}
+		return request.getRemoteAddr();
 	}
 }

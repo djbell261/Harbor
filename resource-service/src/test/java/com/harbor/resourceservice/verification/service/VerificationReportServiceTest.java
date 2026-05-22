@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.server.ResponseStatusException;
 
 class VerificationReportServiceTest {
 
@@ -90,6 +91,26 @@ class VerificationReportServiceTest {
 	}
 
 	@Test
+	void duplicateReviewReturnsConflict() {
+		VerificationReport report = report();
+		report.setStatus(VerificationStatus.accepted);
+		VerificationReportService service = new VerificationReportService(
+			resourceRepositoryReturning(report.getResource()),
+			reviewRepositoryReturning(report)
+		);
+
+		try {
+			service.rejectReport(report.getId(), new ReviewVerificationReportRequest("Nope", "admin"));
+		} catch (ResponseStatusException exception) {
+			assertThat(exception.getStatusCode().value()).isEqualTo(409);
+			assertThat(exception.getReason()).isEqualTo("Verification report has already been reviewed");
+			return;
+		}
+
+		throw new AssertionError("Expected duplicate review to fail with 409");
+	}
+
+	@Test
 	void rejectingReportAddsReviewMetadataWithoutRefreshingResourceTrust() {
 		VerificationReport report = report();
 		VerificationReportService service = new VerificationReportService(
@@ -148,6 +169,9 @@ class VerificationReportServiceTest {
 		}
 		if (returnType.equals(int.class)) {
 			return 0;
+		}
+		if (returnType.equals(Optional.class)) {
+			return Optional.empty();
 		}
 		return null;
 	}

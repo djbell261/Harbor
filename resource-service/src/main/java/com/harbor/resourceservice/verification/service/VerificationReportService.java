@@ -40,7 +40,7 @@ public class VerificationReportService {
 		VerificationReport report = new VerificationReport();
 		report.setResource(resource);
 		report.setReportType(request.reportType());
-		report.setDescription(request.description());
+		report.setDescription(trimToNull(request.description()));
 		report.setSuggestedValue(request.suggestedValue());
 
 		return VerificationReportResponse.from(reportRepository.save(report));
@@ -62,6 +62,7 @@ public class VerificationReportService {
 	@Transactional
 	public VerificationReportResponse acceptReport(UUID id, ReviewVerificationReportRequest request) {
 		VerificationReport report = findReportWithResource(id);
+		ensurePending(report);
 		applyReview(report, VerificationStatus.accepted, request);
 		Resource resource = report.getResource();
 		Instant now = Instant.now();
@@ -74,6 +75,7 @@ public class VerificationReportService {
 	@Transactional
 	public VerificationReportResponse rejectReport(UUID id, ReviewVerificationReportRequest request) {
 		VerificationReport report = findReportWithResource(id);
+		ensurePending(report);
 		applyReview(report, VerificationStatus.rejected, request);
 		return VerificationReportResponse.from(reportRepository.save(report));
 	}
@@ -91,13 +93,32 @@ public class VerificationReportService {
 		report.setStatus(decision);
 		report.setReviewedAt(Instant.now());
 		report.setReviewDecision(decision.name());
-		report.setReviewNotes(request == null ? null : request.reviewNotes());
+		report.setReviewNotes(request == null ? null : trimToNull(request.reviewNotes()));
 		String reviewedBy = request == null ? null : request.reviewedBy();
-		report.setReviewedBy(reviewedBy == null || reviewedBy.isBlank() ? "admin" : reviewedBy.trim());
+		String trimmedReviewedBy = trimToNull(reviewedBy);
+		report.setReviewedBy(trimmedReviewedBy == null ? "admin" : trimmedReviewedBy);
+	}
+
+	private void ensurePending(VerificationReport report) {
+		if (report.getStatus() != VerificationStatus.pending
+			|| report.getReviewedAt() != null
+			|| report.getReviewDecision() != null) {
+			throw new ResponseStatusException(
+				org.springframework.http.HttpStatus.CONFLICT,
+				"Verification report has already been reviewed"
+			);
+		}
 	}
 
 	private BigDecimal increaseConfidence(BigDecimal confidenceScore) {
 		BigDecimal current = confidenceScore == null ? BigDecimal.valueOf(0.500) : confidenceScore;
 		return current.add(BigDecimal.valueOf(0.050)).min(BigDecimal.ONE);
+	}
+
+	private String trimToNull(String value) {
+		if (value == null || value.isBlank()) {
+			return null;
+		}
+		return value.trim();
 	}
 }

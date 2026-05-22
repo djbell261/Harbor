@@ -1,6 +1,7 @@
 package com.harbor.resourceservice.resource.service;
 
 import com.harbor.resourceservice.resource.dto.ResourceDetailResponse;
+import com.harbor.resourceservice.resource.dto.ResourceSearchResponse;
 import com.harbor.resourceservice.resource.dto.ResourceSummaryResponse;
 import com.harbor.resourceservice.resource.dto.CommunityUpdateResponse;
 import com.harbor.resourceservice.resource.dto.VerificationMetadataResponse;
@@ -70,6 +71,41 @@ public class ResourceQueryService {
 				isStale(resource)
 			))
 			.toList();
+	}
+
+	public ResourceSearchResponse searchResources(
+		String category,
+		String city,
+		String postalCode,
+		int page,
+		int size
+	) {
+		Pageable pageable = PageRequest.of(Math.max(page, 0), clamp(size, 1, 100));
+		var resourcePage = resourceRepository.searchPublicResources(
+			blankToNull(category),
+			blankToNull(city),
+			blankToNull(postalCode),
+			pageable
+		);
+		List<ResourceSummaryResponse> items = resourcePage.getContent()
+			.stream()
+			.map(resource -> ResourceSummaryResponse.from(
+				resource,
+				findCurrentStatus(resource.getId()),
+				buildVerificationMetadata(resource),
+				isStale(resource)
+			))
+			.toList();
+
+		return new ResourceSearchResponse(
+			items,
+			resourcePage.getNumber(),
+			resourcePage.getSize(),
+			resourcePage.getTotalElements(),
+			resourcePage.getTotalPages(),
+			resourcePage.hasNext(),
+			resourcePage.hasPrevious()
+		);
 	}
 
 	public ResourceDetailResponse findResource(UUID id) {
